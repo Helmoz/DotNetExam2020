@@ -1,0 +1,21 @@
+﻿
+@{
+    ViewData["Title"] = "Scan";
+}
+
+<h1>Scan</h1>
+<form method="post">
+    <label>Url:</label>
+    <input type="text" name="url" /><br /><br />
+    <label>Глубина:</label>
+    <input type="number" name="depth" /><br /><br />
+    <label>Кол-во ссылок:</label>
+    <input type="number" name="amount" /><br /><br />
+    <input type="submit" value="Let's go" />
+    @{
+        if (!string.IsNullOrEmpty(ViewBag.Message))
+        {
+            <h3>@ViewBag.Message</h3>
+        }
+    }
+</form>
