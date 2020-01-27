@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Exam2020.DAL;
+using Exam2020.Models;
 
 namespace Exam2020.Services
 {

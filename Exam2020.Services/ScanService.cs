@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Exam2020.DAL;
+using Exam2020.Models;
 
 namespace Exam2020.Services
 {
@@ -50,13 +51,20 @@ namespace Exam2020.Services
             var html = await GetHtmlAsync(urlContent.Url);
             var host = urlContent.Url.GetHost();
 
-            return html.DocumentNode.SelectNodes("//a[@href]")
-                .Where(x => x.GetHref().GetHost() == host
-                            && !addedLink.Select(content => content.Url).Contains(x.GetHref()))
-                .Distinct()
-                .Take(amount)
-                .Select(x => new UrlContent(x.GetHref(), html.DocumentNode.InnerText.Trim()))
-                .ToList();
+            var nodes = html?.DocumentNode?.SelectNodes("//a[@href]");
+
+            if (nodes != null)
+            {
+                return html.DocumentNode.SelectNodes("//a[@href]")
+                    .Where(x => x.GetHref().GetHost() == host
+                                && !addedLink.Select(content => content.Url).Contains(x.GetHref()))
+                    .Distinct()
+                    .Take(amount)
+                    .Select(x => new UrlContent(x.GetHref(), html.DocumentNode.InnerText.Trim()))
+                    .ToList();
+            }
+
+            return new List<UrlContent>();
         }
 
         private async Task<HtmlDocument> GetHtmlAsync(string url)

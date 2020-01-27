@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Exam2020.Models;
 
 namespace Exam2020.DAL
 {

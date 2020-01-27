@@ -7,6 +7,7 @@ using System.Security.Policy;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Exam2020.DAL;
+using Exam2020.Models;
 using Exam2020.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -46,6 +47,11 @@ namespace Exam2020.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Scan(string url, int depth, int amount)
         {
+            if (!ModelState.IsValid || !Uri.IsWellFormedUriString(url, UriKind.Absolute))
+            {
+                ViewBag.Message = $"Введите корректные данные";
+                return View();
+            }
             var result = await ScanService.ScanUrl(url, depth, amount);
 
             foreach (var urlContent in result)
