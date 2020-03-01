@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Exam2020.DAL;
 using Exam2020.Models;
+using System.Net;
+using System.Threading;
 
 namespace Exam2020.Services
 {
@@ -17,74 +19,71 @@ namespace Exam2020.Services
             Context = context;
         }
 
-
-        public async Task<List<UrlContent>> ScanUrl(string url, int depth, int amount)
+        public List<UrlContent> ScanUrl(string url, int depth, int amount)
         {
-            var added = Context.UrlContents.ToList();
-            var rootLinks = await GetLinksByUrl(added, new UrlContent(url, ""), amount);
+            var mainList = Context.UrlContents.ToList();
+            var t = new Thread(() => GetLinksByUrl(mainList, new UrlContent(url, ""), amount));
+            t.Start();
+            var t2 = new Thread(() => GetChildLinks(mainList, depth, amount));
+            t2.Start();
+            t.Join();
+            t2.Join();
 
-            var result = await GetChildLinks(rootLinks, depth, amount);
-
-            return result;
+            return mainList;
         }
 
-        private async Task<List<UrlContent>> GetChildLinks(List<UrlContent> links, int depth, int amount)
+        private void GetChildLinks(List<UrlContent> links, int depth, int amount)
         {
             if (depth <= 0)
             {
-                return links;
+                return;
             }
 
-            var localLinks = new List<UrlContent>();
+            var localList = new List<UrlContent>();
 
             foreach (var link in links)
             {
-                var childLinks = await GetLinksByUrl(links, link, amount);
-                localLinks.AddRange(await GetChildLinks(childLinks, depth - 1, amount));
+                GetLinksByUrl(localList, link, amount);
+                GetChildLinks(localList, depth - 1, amount);
             }
 
-            return localLinks;
+            links.AddRange(localList);
         }
 
-        private async Task<List<UrlContent>> GetLinksByUrl(IReadOnlyCollection<UrlContent> addedLink, UrlContent urlContent, int amount)
+        private void GetLinksByUrl(List<UrlContent> mainList,  UrlContent urlContent, int amount)
         {
-            var html = await GetHtmlAsync(urlContent.Url);
+            var html = GetHtml(urlContent.Url);
             var host = urlContent.Url.GetHost();
 
             var nodes = html?.DocumentNode?.SelectNodes("//a[@href]");
 
             if (nodes != null)
             {
-                return html.DocumentNode.SelectNodes("//a[@href]")
+                mainList.AddRange(html.DocumentNode.SelectNodes("//a[@href]")
                     .Where(x => x.GetHref().GetHost() == host
-                                && !addedLink.Select(content => content.Url).Contains(x.GetHref()))
+                                && !mainList.Select(content => content.Url).Contains(x.GetHref()))
                     .Distinct()
                     .Take(amount)
                     .Select(x => new UrlContent(x.GetHref(), html.DocumentNode.InnerText.Trim()))
-                    .ToList();
+                    .ToList());
             }
-
-            return new List<UrlContent>();
         }
 
-        private async Task<HtmlDocument> GetHtmlAsync(string url)
+        private HtmlDocument GetHtml(string url)
         {
             HtmlDocument html = new HtmlDocument();
-            using (HttpClient client = new HttpClient())
+            using (var client = new WebClient())
             {
                 if (!url.IsValidUrl())
                 {
                     return null;
                 }
-                using (HttpResponseMessage res = await client.GetAsync(url))
-                using (HttpContent content = res.Content)
+                var res = client.DownloadString(url);
+                if (res != null)
                 {
-                    string data = await content.ReadAsStringAsync();
-                    if (data != null)
-                    {
-                        html.LoadHtml(data);
-                    }
+                    html.LoadHtml(res);
                 }
+                
             }
 
             return html;

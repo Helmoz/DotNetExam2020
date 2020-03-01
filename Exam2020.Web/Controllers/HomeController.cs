@@ -52,7 +52,7 @@ namespace Exam2020.Web.Controllers
                 ViewBag.Message = $"Введите корректные данные";
                 return View();
             }
-            var result = await ScanService.ScanUrl(url, depth, amount);
+            var result = ScanService.ScanUrl(url, depth, amount);
 
             foreach (var urlContent in result)
             {
